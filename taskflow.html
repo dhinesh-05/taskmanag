@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskFlow — Task Management</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-200: #AFA9EC;
+    --purple-400: #7F77DD; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --amber-50: #FAEEDA; --amber-600: #854F0B;
+    --red-50: #FCEBEB; --red-600: #A32D2D;
+    --green-50: #EAF3DE; --green-600: #3B6D11;
+    --coral-50: #FAECE7; --coral-600: #993C1D;
+    --gray-50: #F1EFE8; --gray-100: #D3D1C7; --gray-200: #B4B2A9;
+    --gray-400: #888780; --gray-600: #5F5E5A; --gray-800: #444441; --gray-900: #2C2C2A;
+
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f7f5;
+    --bg-tertiary: #f0efe9;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border-light: rgba(0,0,0,0.1);
+    --border-mid: rgba(0,0,0,0.18);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --sidebar-w: 230px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #262624;
+      --bg-tertiary: #161614;
+      --text-primary: #eeede8;
+      --text-secondary: #b4b2a9;
+      --text-tertiary: #888780;
+      --border-light: rgba(255,255,255,0.08);
+      --border-mid: rgba(255,255,255,0.14);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.35);
+    }
+  }
+
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 99px; }
+
+  /* ── LOGIN ── */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-tertiary); }
+  .login-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 2.25rem; width: 380px; box-shadow: var(--shadow-md); }
+  .login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+  .brand-icon { width: 34px; height: 34px; background: var(--purple-600); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--purple-50); font-size: 17px; flex-shrink: 0; }
+  .brand-name { font-size: 17px; font-weight: 600; color: var(--text-primary); letter-spacing: -.3px; }
+  .login-card h2 { font-size: 20px; font-weight: 600; margin-bottom: .3rem; letter-spacing: -.3px; }
+  .login-card .sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.75rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; }
+  .field input { width: 100%; padding: 9px 12px; background: var(--bg-secondary); border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); font-size: 13.5px; color: var(--text-primary); font-family: inherit; transition: border-color .15s, box-shadow .15s; outline: none; }
+  .field input:focus { border-color: var(--purple-400); box-shadow: 0 0 0 3px rgba(127,119,221,.15); }
+  .login-btn { width: 100%; padding: 10px; background: var(--purple-600); color: #fff; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: .5rem; transition: background .15s; }
+  .login-btn:hover { background: var(--purple-800); }
+
+  .error-msg { background: var(--red-50); color: var(--red-600); border-radius: var(--radius-md); padding: 8px 12px; font-size: 12.5px; margin-bottom: .75rem; display: none; }
+  .error-msg.show { display: block; }
+
+  /* ── APP SHELL ── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: var(--sidebar-w); background: var(--bg-primary); border-right: 0.5px solid var(--border-light); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-top { padding: 1.1rem 1.1rem .9rem; border-bottom: 0.5px solid var(--border-light); }
+  .sidebar-brand { display: flex; align-items: center; gap: 9px; }
+  .nav-section { padding: .75rem .6rem .25rem; }
+  .nav-label { font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .07em; padding: 0 .5rem; margin-bottom: 3px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6.5px 10px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: background .1s, color .1s; user-select: none; }
+  .nav-item:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .nav-item.active { background: var(--purple-50); color: var(--purple-800); }
+  .nav-item i { font-size: 16px; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; font-size: 10.5px; background: var(--bg-secondary); color: var(--text-tertiary); border: 0.5px solid var(--border-light); padding: 1px 6px; border-radius: 10px; min-width: 20px; text-align: center; }
+  .nav-item.active .nav-badge { background: var(--purple-100); color: var(--purple-800); border-color: var(--purple-200); }
+  .sidebar-spacer { flex: 1; }
+  .sidebar-footer { padding: .75rem .6rem; border-top: 0.5px solid var(--border-light); }
+  .logout-btn { display: flex; align-items: center; gap: 9px; padding: 6.5px 10px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; color: var(--text-secondary); background: none; border: none; width: 100%; transition: background .1s; }
+  .logout-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .user-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; margin-bottom: 4px; }
+  .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; }
+  .avatar-sm { width: 26px; height: 26px; font-size: 10px; }
+  .avatar-md { width: 32px; height: 32px; font-size: 12px; }
+  .user-name { font-size: 12.5px; font-weight: 500; color: var(--text-primary); }
+  .user-role { font-size: 11px; color: var(--text-tertiary); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── TOPBAR ── */
+  .topbar { height: 54px; background: var(--bg-primary); border-bottom: 0.5px solid var(--border-light); padding: 0 1.5rem; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .topbar-title { font-size: 15px; font-weight: 600; color: var(--text-primary); letter-spacing: -.2px; flex: 1; }
+  .search-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg-secondary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 0 10px; height: 34px; width: 220px; transition: border-color .15s, box-shadow .15s; }
+  .search-wrap:focus-within { border-color: var(--purple-400); box-shadow: 0 0 0 3px rgba(127,119,221,.12); }
+  .search-wrap i { font-size: 15px; color: var(--text-tertiary); flex-shrink: 0; }
+  .search-wrap input { background: none; border: none; outline: none; font-size: 13px; color: var(--text-primary); width: 100%; font-family: inherit; }
+  .search-wrap input::placeholder { color: var(--text-tertiary); }
+  .add-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: var(--purple-600); color: #fff; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background .15s; }
+  .add-btn:hover { background: var(--purple-800); }
+  .add-btn i { font-size: 15px; }
+  .icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary); transition: background .1s; font-size: 16px; }
+  .icon-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+  .icon-btn.active { background: var(--purple-50); color: var(--purple-600); border-color: var(--purple-200); }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; overflow: auto; padding: 1.5rem; }
+
+  /* ── KANBAN ── */
+  .kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: start; }
+  .kanban-col { background: var(--bg-secondary); border-radius: var(--radius-lg); padding: .875rem; border: 1.5px solid transparent; transition: border-color .15s, background .15s; }
+  .kanban-col.drag-over { border-color: var(--purple-400); background: var(--purple-50); }
+  .col-header { display: flex; align-items: center; gap: 8px; margin-bottom: .875rem; }
+  .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .col-title { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+  .col-count { margin-left: auto; font-size: 11px; background: var(--bg-primary); border: 0.5px solid var(--border-light); color: var(--text-tertiary); padding: 1px 7px; border-radius: 10px; }
+  .task-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: .875rem 1rem; margin-bottom: .5rem; cursor: grab; transition: box-shadow .15s, border-color .15s, transform .1s; user-select: none; }
+  .task-card:hover { box-shadow: var(--shadow-sm); border-color: var(--border-mid); }
+  .task-card:active { cursor: grabbing; transform: scale(0.98); }
+  .task-card.dragging { opacity: .45; box-shadow: none; }
+  .task-title-text { font-size: 13.5px; color: var(--text-primary); margin-bottom: 10px; line-height: 1.45; }
+  .task-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+  .badge-high { background: var(--red-50); color: var(--red-600); }
+  .badge-med { background: var(--amber-50); color: var(--amber-600); }
+  .badge-low { background: var(--green-50); color: var(--green-600); }
+  .badge-tag { background: var(--purple-50); color: var(--purple-800); }
+  .due-date { font-size: 11px; color: var(--text-tertiary); margin-left: auto; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .due-date i { font-size: 12px; }
+  .mini-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; border: 1.5px solid var(--bg-primary); }
+  .add-card-btn { width: 100%; padding: 7px; background: none; border: 0.5px dashed var(--border-mid); border-radius: var(--radius-md); color: var(--text-tertiary); font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; font-family: inherit; transition: background .1s, color .1s, border-color .1s; }
+  .add-card-btn:hover { background: var(--bg-primary); color: var(--text-secondary); border-color: var(--border-mid); }
+  .empty-col { text-align: center; padding: 2rem 1rem; color: var(--text-tertiary); font-size: 12.5px; }
+  .empty-col i { font-size: 26px; display: block; margin-bottom: 6px; opacity: .35; }
+
+  /* ── LIST VIEW ── */
+  .list-table { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); overflow: hidden; }
+  .list-header { display: grid; grid-template-columns: 1fr 110px 100px 90px 90px 42px; padding: 8px 1.1rem; border-bottom: 0.5px solid var(--border-light); font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; }
+  .list-row { display: grid; grid-template-columns: 1fr 110px 100px 90px 90px 42px; padding: 10px 1.1rem; border-bottom: 0.5px solid var(--border-light); align-items: center; cursor: pointer; transition: background .1s; }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:hover { background: var(--bg-secondary); }
+  .list-task-title { font-size: 13px; color: var(--text-primary); }
+  .status-pill { font-size: 11px; padding: 3px 9px; border-radius: 10px; font-weight: 500; width: fit-content; }
+  .status-todo { background: var(--gray-50); color: var(--gray-600); }
+  .status-inprogress { background: var(--amber-50); color: var(--amber-600); }
+  .status-done { background: var(--green-50); color: var(--green-600); }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); padding: 1rem; }
+  .modal { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-xl); width: 500px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-md); }
+  .modal-head { padding: 1.25rem 1.5rem .5rem; display: flex; align-items: center; gap: 10px; border-bottom: 0.5px solid var(--border-light); padding-bottom: 1rem; }
+  .modal-head h3 { font-size: 15px; font-weight: 600; flex: 1; }
+  .modal-close { background: none; border: none; cursor: pointer; color: var(--text-tertiary); display: flex; padding: 4px; border-radius: var(--radius-sm); transition: background .1s; }
+  .modal-close:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .modal-close i { font-size: 18px; }
+  .modal-body { padding: 1.25rem 1.5rem; }
+  .form-field { margin-bottom: 1rem; }
+  .form-field label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; }
+  .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 8px 11px; background: var(--bg-secondary); border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); font-size: 13.5px; color: var(--text-primary); font-family: inherit; outline: none; transition: border-color .15s, box-shadow .15s; }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--purple-400); box-shadow: 0 0 0 3px rgba(127,119,221,.15); }
+  .form-field textarea { min-height: 80px; resize: vertical; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-foot { padding: .75rem 1.5rem 1.25rem; display: flex; gap: 8px; justify-content: flex-end; border-top: 0.5px solid var(--border-light); }
+  .btn-del { display: flex; align-items: center; gap: 5px; padding: 7px 13px; background: var(--red-50); color: var(--red-600); border: 0.5px solid rgba(163,45,45,.2); border-radius: var(--radius-md); font-size: 12.5px; cursor: pointer; font-family: inherit; margin-right: auto; transition: background .1s; }
+  .btn-del:hover { background: #f7c1c1; }
+  .btn-cancel { padding: 7px 16px; background: none; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: inherit; transition: background .1s; }
+  .btn-cancel:hover { background: var(--bg-secondary); }
+  .btn-save { padding: 7px 18px; background: var(--purple-600); color: #fff; border: none; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-weight: 500; font-family: inherit; transition: background .15s; }
+  .btn-save:hover { background: var(--purple-800); }
+
+  /* ── TOAST ── */
+  #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { background: var(--gray-900); color: #f1efe8; padding: 10px 16px; border-radius: var(--radius-md); font-size: 13px; box-shadow: var(--shadow-md); animation: toast-in .2s ease; pointer-events: all; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .toast-out { animation: toast-out .2s ease forwards; }
+  @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
+
+  /* ── STATS BAR ── */
+  .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: .875rem; margin-bottom: 1.25rem; }
+  .stat-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: .875rem 1rem; }
+  .stat-label { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+  .stat-val { font-size: 24px; font-weight: 600; color: var(--text-primary); letter-spacing: -.5px; }
+  .stat-sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
+
+  /* ── VIEW TOGGLE ── */
+  .view-toggle { display: flex; background: var(--bg-secondary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 2px; gap: 2px; }
+  .view-toggle button { padding: 5px 10px; border: none; border-radius: 6px; background: none; cursor: pointer; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; transition: background .1s, color .1s; }
+  .view-toggle button.active { background: var(--bg-primary); color: var(--purple-600); box-shadow: var(--shadow-sm); }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .kanban { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .list-header, .list-row { grid-template-columns: 1fr 90px 36px; }
+    .list-header span:nth-child(2), .list-row>*:nth-child(2) { display: none; }
+    .list-header span:nth-child(3), .list-row>*:nth-child(3) { display: none; }
+    .list-header span:nth-child(5), .list-row>*:nth-child(5) { display: none; }
+    .topbar { padding: 0 1rem; }
+    .search-wrap { width: 140px; }
+    .content { padding: 1rem; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+<div id="root"></div>
+
+<script>
+const USERS = [
+  {id:1, name:"Alex Kim",    initials:"AK", color:"#534AB7", bg:"#EEEDFE"},
+  {id:2, name:"Sara Chen",   initials:"SC", color:"#0F6E56", bg:"#E1F5EE"},
+  {id:3, name:"Mo Patel",    initials:"MP", color:"#993C1D", bg:"#FAECE7"},
+];
+
+const DEMO = {email:"demo@tasks.app", pw:"demo"};
+
+let state = {
+  auth: null,
+  view: "board",
+  filter: "all",
+  search: "",
+  modal: null,
+  editForm: {},
+  dragId: null,
+  overCol: null,
+  tasks: [
+    {id:1, title:"Design new onboarding flow",      status:"todo",       priority:"high", tag:"Design",   due:"Jun 28", assignee:1},
+    {id:2, title:"Fix auth token refresh bug",       status:"todo",       priority:"high", tag:"Bug",      due:"Jun 25", assignee:2},
+    {id:3, title:"Write Q2 retrospective doc",       status:"todo",       priority:"low",  tag:"Docs",     due:"Jul 5",  assignee:3},
+    {id:4, title:"Implement drag-and-drop board",    status:"inprogress", priority:"med",  tag:"Feature",  due:"Jun 30", assignee:1},
+    {id:5, title:"Update API documentation",         status:"inprogress", priority:"low",  tag:"Docs",     due:"Jul 3",  assignee:2},
+    {id:6, title:"User research interviews",         status:"done",       priority:"med",  tag:"Research", due:"Jun 20", assignee:3},
+    {id:7, title:"Set up CI/CD pipeline",            status:"done",       priority:"high", tag:"DevOps",   due:"Jun 18", assignee:1},
+    {id:8, title:"Mobile responsive audit",          status:"todo",       priority:"med",  tag:"Design",   due:"Jul 8",  assignee:2},
+  ],
+  nextId: 9,
+};
+
+/* ── RENDER ── */
+function render() {
+  document.getElementById("root").innerHTML = state.auth ? appHTML() : loginHTML();
+  bindEvents();
+}
+
+/* ── LOGIN ── */
+function loginHTML() {
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="brand-icon"><i class="ti ti-checks"></i></div>
+        <span class="brand-name">TaskFlow</span>
+      </div>
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to your workspace to continue.</p>
+      <div id="login-error" class="error-msg">Invalid credentials. Try the demo account below.</div>
+      <div class="field"><label>Email address</label><input id="em" type="email" value="demo@tasks.app" autocomplete="email"></div>
+      <div class="field"><label>Password</label><input id="pw" type="password" value="demo" autocomplete="current-password"></div>
+      <button class="login-btn" id="login-btn">Sign in</button>
+    </div>
+  </div>`;
+}
+
+/* ── APP ── */
+function appHTML() {
+  const u = state.auth;
+  const counts = getCounts();
+  return `
+  <div class="app">
+    ${sidebarHTML(u, counts)}
+    <div class="main">
+      ${topbarHTML()}
+      <div class="content" id="content">
+        ${state.view === "board" ? boardHTML() : listHTML()}
+      </div>
+    </div>
+  </div>
+  ${state.modal ? modalHTML() : ""}`;
+}
+
+function sidebarHTML(u, counts) {
+  const nav = (key, icon, label, count) => {
+    const isFilter = ["todo","inprogress","done"].includes(key);
+    const active = isFilter ? state.filter === key : state.view === key && state.filter === "all";
+    return `<div class="nav-item${active?" active":""}" data-nav="${key}">
+      <i class="ti ti-${icon}" aria-hidden="true"></i>${label}
+      <span class="nav-badge">${count}</span>
+    </div>`;
+  };
+  return `
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <div class="brand-icon" style="width:28px;height:28px;font-size:14px"><i class="ti ti-checks"></i></div>
+        <span class="brand-name">TaskFlow</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Views</div>
+      ${nav("board","layout-kanban","Board",counts.all)}
+      ${nav("list","list","All Tasks",counts.all)}
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Status</div>
+      ${nav("todo","circle","To Do",counts.todo)}
+      ${nav("inprogress","loader","In Progress",counts.inprogress)}
+      ${nav("done","circle-check","Done",counts.done)}
+    </div>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar avatar-sm" style="background:${u.bg};color:${u.color}">${u.initials}</div>
+        <div><div class="user-name">${u.name}</div><div class="user-role">Member</div></div>
+      </div>
+      <button class="logout-btn" id="logout-btn"><i class="ti ti-logout" style="font-size:16px"></i>Sign out</button>
+    </div>
+  </aside>`;
+}
+
+function topbarHTML() {
+  const labels = {board:"Kanban Board", list:"All Tasks"};
+  return `
+  <div class="topbar">
+    <span class="topbar-title">${labels[state.view]||"Tasks"}</span>
+    <div class="search-wrap">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input id="search" placeholder="Search tasks…" value="${state.search}" autocomplete="off">
+    </div>
+    <div class="view-toggle">
+      <button class="${state.view==="board"?"active":""}" data-viewbtn="board" title="Board view"><i class="ti ti-layout-kanban"></i></button>
+      <button class="${state.view==="list"?"active":""}" data-viewbtn="list" title="List view"><i class="ti ti-list"></i></button>
+    </div>
+    <button class="add-btn" id="new-task-btn"><i class="ti ti-plus"></i>New Task</button>
+  </div>`;
+}
+
+function boardHTML() {
+  const cols = [
+    {key:"todo",       label:"To Do",       dot:"#AFA9EC"},
+    {key:"inprogress", label:"In Progress",  dot:"#EF9F27"},
+    {key:"done",       label:"Done",         dot:"#97C459"},
+  ];
+  const tasks = filteredTasks();
+  const counts = getCounts();
+  return `
+  ${statsHTML()}
+  <div class="kanban">
+    ${cols.map(col => {
+      const colTasks = tasks.filter(t => t.status === col.key);
+      return `
+      <div class="kanban-col${state.overCol===col.key?" drag-over":""}"
+           data-col="${col.key}"
+           ondragover="onDragOver(event,'${col.key}')"
+           ondrop="onDrop(event,'${col.key}')"
+           ondragleave="onDragLeave(event)">
+        <div class="col-header">
+          <div class="col-dot" style="background:${col.dot}"></div>
+          <span class="col-title">${col.label}</span>
+          <span class="col-count">${counts[col.key]}</span>
+        </div>
+        ${colTasks.length === 0 ? `<div class="empty-col"><i class="ti ti-inbox"></i>No tasks</div>` : ""}
+        ${colTasks.map(taskCardHTML).join("")}
+        <button class="add-card-btn" data-addcol="${col.key}"><i class="ti ti-plus" style="font-size:13px"></i>Add task</button>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+function statsHTML() {
+  const c = getCounts();
+  const pct = c.all ? Math.round((c.done / c.all) * 100) : 0;
+  return `
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">${c.all}</div><div class="stat-sub">tasks</div></div>
+    <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-val">${c.inprogress}</div><div class="stat-sub">active</div></div>
+    <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-val">${c.done}</div><div class="stat-sub">tasks done</div></div>
+    <div class="stat-card"><div class="stat-label">Progress</div><div class="stat-val">${pct}%</div><div class="stat-sub">completion rate</div></div>
+  </div>`;
+}
+
+function taskCardHTML(t) {
+  const u = USERS.find(u => u.id === t.assignee) || USERS[0];
+  const pClass = t.priority === "high" ? "badge-high" : t.priority === "med" ? "badge-med" : "badge-low";
+  const pLabel = t.priority === "med" ? "Medium" : t.priority.charAt(0).toUpperCase() + t.priority.slice(1);
+  return `
+  <div class="task-card" draggable="true" data-id="${t.id}" data-drag="true">
+    <div class="task-title-text">${escHtml(t.title)}</div>
+    <div class="task-footer">
+      <span class="badge ${pClass}">${pLabel}</span>
+      <span class="badge badge-tag">${escHtml(t.tag)}</span>
+      <div class="mini-avatar" style="background:${u.bg};color:${u.color}" title="${u.name}">${u.initials}</div>
+      <span class="due-date"><i class="ti ti-calendar" aria-hidden="true"></i>${escHtml(t.due)}</span>
+    </div>
+  </div>`;
+}
+
+function listHTML() {
+  const tasks = filteredTasks();
+  if (!tasks.length) return `<div style="text-align:center;padding:3rem;color:var(--text-tertiary)"><i class="ti ti-clipboard-x" style="font-size:32px;display:block;margin-bottom:8px;opacity:.4"></i>No tasks match your filter.</div>`;
+  return `
+  <div class="list-table">
+    <div class="list-header">
+      <span>Task</span><span>Status</span><span>Priority</span><span>Assignee</span><span>Due</span><span></span>
+    </div>
+    ${tasks.map(t => {
+      const u = USERS.find(u => u.id === t.assignee) || USERS[0];
+      const sClass = t.status === "todo" ? "status-todo" : t.status === "inprogress" ? "status-inprogress" : "status-done";
+      const sLabel = {todo:"To Do", inprogress:"In Progress", done:"Done"}[t.status];
+      const pClass = t.priority === "high" ? "badge-high" : t.priority === "med" ? "badge-med" : "badge-low";
+      const pLabel = t.priority === "med" ? "Medium" : t.priority.charAt(0).toUpperCase() + t.priority.slice(1);
+      return `
+      <div class="list-row" data-id="${t.id}" data-listrow="true">
+        <span class="list-task-title">${escHtml(t.title)}</span>
+        <span><span class="status-pill ${sClass}">${sLabel}</span></span>
+        <span><span class="badge ${pClass}">${pLabel}</span></span>
+        <span><div class="mini-avatar" style="background:${u.bg};color:${u.color};width:26px;height:26px;font-size:10px" title="${u.name}">${u.initials}</div></span>
+        <span style="font-size:12px;color:var(--text-tertiary)">${escHtml(t.due)}</span>
+        <span><button style="background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:15px;padding:2px" data-editbtn="${t.id}" title="Edit"><i class="ti ti-dots-vertical"></i></button></span>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+function modalHTML() {
+  const isEdit = state.modal === "edit";
+  const f = state.editForm;
+  return `
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="${isEdit?"Edit task":"New task"}">
+      <div class="modal-head">
+        <h3>${isEdit ? "Edit task" : "New task"}</h3>
+        <button class="modal-close" id="modal-close" aria-label="Close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field"><label>Task title *</label><input id="f-title" value="${escAttr(f.title||"")}" placeholder="What needs to be done?"></div>
+        <div class="form-field"><label>Description</label><textarea id="f-desc" placeholder="Add more details…">${escHtml(f.desc||"")}</textarea></div>
+        <div class="field-row">
+          <div class="form-field"><label>Status</label>
+            <select id="f-status">
+              <option value="todo" ${(f.status||"todo")==="todo"?"selected":""}>To Do</option>
+              <option value="inprogress" ${f.status==="inprogress"?"selected":""}>In Progress</option>
+              <option value="done" ${f.status==="done"?"selected":""}>Done</option>
+            </select>
+          </div>
+          <div class="form-field"><label>Priority</label>
+            <select id="f-priority">
+              <option value="high" ${(f.priority||"med")==="high"?"selected":""}>High</option>
+              <option value="med" ${(f.priority||"med")==="med"?"selected":""}>Medium</option>
+              <option value="low" ${f.priority==="low"?"selected":""}>Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="form-field"><label>Tag / Category</label><input id="f-tag" value="${escAttr(f.tag||"")}" placeholder="Feature, Bug, Docs…"></div>
+          <div class="form-field"><label>Due date</label><input id="f-due" value="${escAttr(f.due||"")}" placeholder="e.g. Jul 10"></div>
+        </div>
+        <div class="form-field"><label>Assignee</label>
+          <select id="f-assignee">
+            ${USERS.map(u=>`<option value="${u.id}" ${f.assignee==u.id?"selected":""}>${u.name}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        ${isEdit ? `<button class="btn-del" id="del-btn"><i class="ti ti-trash"></i> Delete</button>` : ""}
+        <button class="btn-cancel" id="modal-cancel">Cancel</button>
+        <button class="btn-save" id="modal-save">${isEdit?"Save changes":"Create task"}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── EVENTS ── */
+function bindEvents() {
+  // Login
+  const loginBtn = document.getElementById("login-btn");
+  if (loginBtn) {
+    loginBtn.addEventListener("click", doLogin);
+    document.getElementById("pw").addEventListener("keydown", e => e.key === "Enter" && doLogin());
+  }
+
+  // Logout
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) logoutBtn.addEventListener("click", doLogout);
+
+  // Search
+  const searchEl = document.getElementById("search");
+  if (searchEl) searchEl.addEventListener("input", e => { state.search = e.target.value; updateContent(); });
+
+  // New task
+  const newBtn = document.getElementById("new-task-btn");
+  if (newBtn) newBtn.addEventListener("click", () => openModal("new", {status:"todo", priority:"med", assignee: state.auth.id}));
+
+  // Nav items
+  document.querySelectorAll("[data-nav]").forEach(el => {
+    el.addEventListener("click", () => {
+      const key = el.dataset.nav;
+      if (key === "board") { state.view = "board"; state.filter = "all"; }
+      else if (key === "list") { state.view = "list"; state.filter = "all"; }
+      else { state.filter = key; state.view = "board"; }
+      render();
+    });
+  });
+
+  // View toggle
+  document.querySelectorAll("[data-viewbtn]").forEach(btn => {
+    btn.addEventListener("click", () => { state.view = btn.dataset.viewbtn; state.filter = "all"; render(); });
+  });
+
+  // Add task per column
+  document.querySelectorAll("[data-addcol]").forEach(btn => {
+    btn.addEventListener("click", () => openModal("new", {status: btn.dataset.addcol, priority:"med", assignee: state.auth.id}));
+  });
+
+  // Task card click (board)
+  document.querySelectorAll("[data-drag='true']").forEach(card => {
+    card.addEventListener("click", () => openModal("edit", {...state.tasks.find(t => t.id == card.dataset.id)}));
+    card.addEventListener("dragstart", e => { state.dragId = parseInt(card.dataset.id); card.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
+    card.addEventListener("dragend", () => { card.classList.remove("dragging"); state.overCol = null; });
+  });
+
+  // List row click
+  document.querySelectorAll("[data-listrow]").forEach(row => {
+    row.addEventListener("click", e => {
+      if (e.target.closest("[data-editbtn]")) return;
+      openModal("edit", {...state.tasks.find(t => t.id == row.dataset.id)});
+    });
+  });
+  document.querySelectorAll("[data-editbtn]").forEach(btn => {
+    btn.addEventListener("click", () => openModal("edit", {...state.tasks.find(t => t.id == btn.dataset.editbtn)}));
+  });
+
+  // Modal
+  const overlay = document.getElementById("modal-overlay");
+  if (overlay) {
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    document.getElementById("modal-save").addEventListener("click", saveTask);
+    const delBtn = document.getElementById("del-btn");
+    if (delBtn) delBtn.addEventListener("click", deleteTask);
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+    document.addEventListener("keydown", onKeydown, {once:true});
+  }
+}
+
+function onKeydown(e) { if (e.key === "Escape" && state.modal) closeModal(); }
+
+/* ── DRAG DROP ── */
+function onDragOver(e, col) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  if (state.overCol !== col) { state.overCol = col; updateContent(); }
+}
+function onDragLeave(e) {
+  const col = e.currentTarget;
+  if (!col.contains(e.relatedTarget)) { state.overCol = null; updateContent(); }
+}
+function onDrop(e, col) {
+  e.preventDefault();
+  if (state.dragId) {
+    const prev = state.tasks.find(t => t.id === state.dragId);
+    state.tasks = state.tasks.map(t => t.id === state.dragId ? {...t, status: col} : t);
+    state.dragId = null; state.overCol = null;
+    const labels = {todo:"To Do", inprogress:"In Progress", done:"Done"};
+    if (prev && prev.status !== col) toast("Moved to " + labels[col]);
+    else updateContent();
+  }
+}
+
+/* ── AUTH ── */
+function doLogin() {
+  const em = document.getElementById("em").value.trim();
+  const pw = document.getElementById("pw").value;
+  const err = document.getElementById("login-error");
+  if (em === DEMO.email && pw === DEMO.pw) {
+    state.auth = USERS[0]; render(); toast("Welcome back, " + USERS[0].name.split(" ")[0] + "!");
+  } else {
+    err.classList.add("show");
+  }
+}
+function doLogout() { state.auth = null; state.filter = "all"; state.search = ""; render(); }
+
+/* ── MODAL OPS ── */
+function openModal(mode, form) { state.modal = mode; state.editForm = form; render(); }
+function closeModal() { state.modal = null; render(); }
+function saveTask() {
+  const title = document.getElementById("f-title").value.trim();
+  if (!title) { toast("Please enter a task title."); return; }
+  const data = {
+    title,
+    desc: document.getElementById("f-desc").value,
+    status: document.getElementById("f-status").value,
+    priority: document.getElementById("f-priority").value,
+    tag: document.getElementById("f-tag").value.trim() || "Task",
+    due: document.getElementById("f-due").value.trim() || "TBD",
+    assignee: parseInt(document.getElementById("f-assignee").value),
+  };
+  if (state.modal === "edit") {
+    state.tasks = state.tasks.map(t => t.id === state.editForm.id ? {...t, ...data} : t);
+    toast("Task updated");
+  } else {
+    state.tasks.push({id: state.nextId++, ...data});
+    toast("Task created");
+  }
+  closeModal();
+}
+function deleteTask() {
+  if (!confirm("Delete this task? This cannot be undone.")) return;
+  state.tasks = state.tasks.filter(t => t.id !== state.editForm.id);
+  toast("Task deleted");
+  closeModal();
+}
+
+/* ── HELPERS ── */
+function filteredTasks() {
+  return state.tasks.filter(t => {
+    if (state.filter !== "all" && t.status !== state.filter) return false;
+    if (state.search && !t.title.toLowerCase().includes(state.search.toLowerCase()) && !t.tag.toLowerCase().includes(state.search.toLowerCase())) return false;
+    return true;
+  });
+}
+function getCounts() {
+  return {
+    all: state.tasks.length,
+    todo: state.tasks.filter(t => t.status === "todo").length,
+    inprogress: state.tasks.filter(t => t.status === "inprogress").length,
+    done: state.tasks.filter(t => t.status === "done").length,
+  };
+}
+function updateContent() {
+  const c = document.getElementById("content");
+  if (c) c.innerHTML = state.view === "board" ? boardHTML() : listHTML();
+  bindEvents();
+}
+function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escAttr(s) { return String(s).replace(/"/g,"&quot;"); }
+function toast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = msg;
+  document.getElementById("toast-container").appendChild(el);
+  setTimeout(() => { el.classList.add("toast-out"); setTimeout(() => el.remove(), 200); }, 2500);
+}
+
+/* ── INIT ── */
+render();
+</script>
+</body>
+</html>
